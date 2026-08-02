@@ -73,7 +73,8 @@
     font-size: .8125rem;
     line-height: 1.55;
     color: var(--phosphor);
-    min-width: 40rem;
+    width: max-content;
+    min-width: 100%;
   }
   .crt .d { color: var(--phosphor-dim); }
   .crt .b { font-weight: 600; }
@@ -113,8 +114,9 @@
     background: var(--crt); color: var(--phosphor);
     padding: 1rem 1.25rem; border-radius: 8px;
     display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-    max-width: 38rem; overflow-x: auto;
+    max-width: 38rem;
   }
+  .install .cmd { overflow-x: auto; white-space: nowrap; flex: 1; }
   .install button {
     font-family: var(--mono); font-size: .8125rem;
     background: none; border: 1px solid var(--phosphor-dim); color: var(--phosphor-dim);
@@ -143,6 +145,18 @@
     display: flex; gap: 1.5rem; flex-wrap: wrap;
   }
   footer a { color: var(--quiet); }
+
+  @media (max-width: 640px) {
+    header.hero { padding: 3rem 0 2rem; }
+    h1 br { display: none; }
+    .prompt { margin-bottom: 1.5rem; }
+    section { padding: 2.5rem 0 0; }
+    .crt { padding: 1rem 1.1rem 1.2rem; border-radius: 8px; }
+    .crt pre { font-size: .6875rem; }
+    .install { font-size: .875rem; padding: .85rem 1rem; }
+    .license-box { padding: 1.25rem; }
+    .license-box .price { font-size: 1.6rem; }
+  }
 </style>
 </head>
 <body>
@@ -215,7 +229,7 @@ last 5h    <span class="bar">█████</span>                           $3
 <section id="install">
   <div class="col">
     <div class="rule">install</div>
-    <div class="install"><span>npx github:joey-io/gauge</span><button onclick="navigator.clipboard.writeText('npx github:joey-io/gauge');this.textContent='copied'">copy</button></div>
+    <div class="install"><span class="cmd">npx github:joey-io/gauge</span><button onclick="navigator.clipboard.writeText('npx github:joey-io/gauge');this.textContent='copied'">copy</button></div>
     <p style="margin-top:1rem">It's a command-line tool, not a service — this page is just the brochure.
     Needs Node 22.5+ (zero dependencies; it uses the built-in sqlite). The first
     run scans your history, about a minute per gigabyte; after that it's
