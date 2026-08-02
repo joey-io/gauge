@@ -48,4 +48,4 @@ After that it's incremental and takes a second or two.
 ## License
 
 MIT. Free to run. If gauge keeps paying for itself, buy a license at
-[gauge.a-gnt.com](https://gauge.a-gnt.com) — $19, once, honor system.
+[gauge.joey.win](https://gauge.joey.win) — $19, once, honor system.

@@ -10,7 +10,7 @@
     "node": ">=22.5"
   },
   "repository": "github:joey-io/gauge",
-  "homepage": "https://gauge.a-gnt.com",
+  "homepage": "https://gauge.joey.win",
   "license": "MIT",
   "files": [
     "bin",
