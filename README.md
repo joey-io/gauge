@@ -47,5 +47,12 @@ After that it's incremental and takes a second or two.
 
 ## License
 
-MIT. Free to run. If gauge keeps paying for itself, buy a license at
-[gauge.joey.win](https://gauge.joey.win) — $19, once, honor system.
+MIT. Free to run — every feature, forever. A license is $3, once, at
+[gauge.joey.win](https://gauge.joey.win). Checkout hands you a signed key:
+
+```
+gauge activate GAUGE-1.xxxxxxxx.xxxxxxxx-...
+```
+
+Keys verify offline against a public key baked into the CLI — no account, no
+phone-home. The only difference is the meter stops calling itself unlicensed.

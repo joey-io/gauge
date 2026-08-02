@@ -8,8 +8,20 @@
 import { db } from '../lib/db.mjs';
 import { cost } from '../lib/pricing.mjs';
 import { scan } from '../lib/scan.mjs';
+import { activate, licensed } from '../lib/license.mjs';
 
 const argv = process.argv.slice(2);
+
+if (argv[0] === 'activate') {
+  if (activate(argv[1] ?? '')) {
+    console.log('license verified and saved — thanks for supporting gauge');
+  } else {
+    console.error('that key did not verify — check for copy-paste damage, or write joey@a-gnt.com');
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 const daysFlag = argv.indexOf('--days');
 const DAYS = daysFlag >= 0 ? Number(argv[daysFlag + 1]) : 7;
 
@@ -112,4 +124,5 @@ for (const [p, v] of [...projTotals.entries()].sort((a, b) => b[1] - a[1]).slice
 console.log(line);
 
 const total = db.prepare('SELECT COUNT(*) n, MIN(ts) lo FROM events').get();
-console.log(dim(`${total.n} API messages since ${String(total.lo).slice(0, 10)} — data: ~/.claude/projects (deduped by message id)`));
+const lic = licensed() ? '' : '  ·  unlicensed — $3 once at gauge.joey.win';
+console.log(dim(`${total.n} API messages since ${String(total.lo).slice(0, 10)} — data: ~/.claude/projects${lic}`));

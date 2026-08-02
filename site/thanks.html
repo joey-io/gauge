@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gauge — your license key</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #e9eae4; --ink: #20221b; --quiet: #7d7f74;
+    --crt: #16130d; --phosphor: #ffb454; --phosphor-dim: #9c8352;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --sans: "IBM Plex Sans", system-ui, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.65; }
+  .col { max-width: 42rem; margin: 0 auto; padding: 4rem 1.25rem; }
+  h1 { font-family: var(--mono); font-weight: 600; font-size: 1.6rem; margin-bottom: 1rem; }
+  p { max-width: 34rem; margin-bottom: 1rem; }
+  a { color: var(--ink); }
+  .keybox {
+    background: var(--crt); color: var(--phosphor); font-family: var(--mono);
+    font-size: .9375rem; padding: 1.25rem; border-radius: 8px; margin: 1.5rem 0 .75rem;
+    word-break: break-all;
+  }
+  .keybox .d { color: var(--phosphor-dim); }
+  button {
+    font-family: var(--mono); font-size: .875rem; background: var(--ink); color: var(--paper);
+    border: 0; border-radius: 6px; padding: .6rem 1.1rem; cursor: pointer;
+  }
+  button:hover { background: #8a5a12; }
+  .err { color: #8a2a12; font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="col">
+  <h1>thanks — here's your key</h1>
+  <div class="keybox" id="box"><span class="d">fetching your license key…</span></div>
+  <button id="copy" hidden>copy activate command</button>
+  <p style="margin-top:1.25rem">Save the key somewhere. To register your install, run the
+  activate command — it verifies offline and writes to <code>~/.cache/gauge</code>.
+  Nothing changes about what gauge does; it just stops calling itself unlicensed.</p>
+  <p>Trouble? Write <a href="mailto:joey@a-gnt.com">joey@a-gnt.com</a> with your receipt.</p>
+  <p><a href="/">back to gauge</a></p>
+</div>
+<script>
+  const sid = new URLSearchParams(location.search).get('session_id');
+  const box = document.getElementById('box');
+  const btn = document.getElementById('copy');
+  if (!sid) {
+    box.innerHTML = '<span class="err">no checkout session in the URL — follow the link from your payment confirmation</span>';
+  } else {
+    fetch('/api/license?session_id=' + encodeURIComponent(sid))
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok) { box.innerHTML = '<span class="err">' + (d.error || 'something went wrong') + '</span>'; return; }
+        const cmd = 'npx github:joey-io/gauge activate ' + d.key;
+        box.textContent = d.key;
+        btn.hidden = false;
+        btn.onclick = () => { navigator.clipboard.writeText(cmd); btn.textContent = 'copied'; };
+      })
+      .catch(() => { box.innerHTML = '<span class="err">network error — refresh to retry</span>'; });
+  }
+</script>
+</body>
+</html>

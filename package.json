@@ -1,6 +1,6 @@
 {
   "name": "gauge-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A local meter for your Claude Code plan. See what's eating your allowance — by hour, day, model, and project. Nothing leaves your machine.",
   "bin": {
     "gauge": "./bin/burn.mjs"
