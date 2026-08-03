@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>gauge — see where your Claude plan goes</title>
-<meta name="description" content="A local meter for your Claude Code plan. One command. See spend by hour, day, model, and project. Nothing leaves your machine.">
+<meta name="description" content="A local meter for your Claude Code and Codex plans. One command. See spend by hour, day, model, and project. Nothing leaves your machine.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
@@ -167,9 +167,11 @@
   <div class="col">
     <p class="prompt">~ <b>$ npx github:joey-io/gauge</b><span class="cursor">&nbsp;</span></p>
     <h1>You pay a flat price for Claude.<br><span class="amber">gauge</span> shows you where it goes.</h1>
-    <p class="lede">A one-command meter for Claude Code. It reads the session
-    transcripts already on your disk and turns them into one screen: spend by
-    hour, day, model, and project. Nothing leaves your machine.</p>
+    <p class="lede">A one-command meter for Claude Code — and Codex, if you run
+    both. It reads the session transcripts already on your disk and turns them
+    into one screen: spend by hour, day, model, and project. There's a
+    statusline mode too, so the burn sits in your editor chrome. Nothing leaves
+    your machine.</p>
   </div>
   <div class="col wide crt-wrap">
     <div class="crt"><pre class="mini">
@@ -240,6 +242,8 @@ last 5h    <span class="bar">█████</span>                           $3
       <div><dt>dedupe</dt><dd>Transcripts repeat each message once per streamed chunk and replay them on session resume. gauge counts each API message once, by message id.</dd></div>
       <div><dt>subagents</dt><dd>Agent transcripts nest deep in the session tree. gauge walks all of it — in testing they held about half the spend.</dd></div>
       <div><dt>pricing</dt><dd>API-list-equivalent dollars, cache reads and writes included. It's a measure, not your bill — plans don't publish quota mechanics, so list price is the honest common currency.</dd></div>
+      <div><dt>codex</dt><dd>Runs Codex too? gauge reads the rollouts in <code>~/.codex</code> and gives them their own section — it's a separate plan's quota, so it never mixes into the Claude numbers. Models without a published rate show token counts, never invented dollars.</dd></div>
+      <div><dt>statusline</dt><dd><code>gauge statusline</code> prints one line for Claude Code's statusLine slot: measured burn beside the official plan percentages. Rescans at most once a minute, so it stays fast.</dd></div>
       <div><dt>privacy</dt><dd>No network calls, no account, no telemetry. The only thing gauge writes is its own cache in <code>~/.cache/gauge</code>.</dd></div>
     </dl>
   </div>
@@ -274,7 +278,7 @@ last 5h    <span class="bar">█████</span>                           $3
     <span>built by <a href="https://a-gnt.com">a-gnt.com</a></span>
     <a href="https://github.com/joey-io/gauge">github</a>
     <span>mit license</span>
-    <span>not affiliated with anthropic</span>
+    <span>not affiliated with anthropic or openai</span>
   </div>
 </footer>
 

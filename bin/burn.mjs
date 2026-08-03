@@ -5,9 +5,12 @@
 // dollars — plans don't expose quota mechanics, so this is the honest common
 // currency, not a bill.
 // Usage: gauge [--days N]  (default window for the breakdown sections: 7)
+//        gauge statusline   (one line for Claude Code's statusLine slot)
+//        gauge activate <key>
 import { db } from '../lib/db.mjs';
 import { cost } from '../lib/pricing.mjs';
 import { scan } from '../lib/scan.mjs';
+import { scanCodex } from '../lib/scan-codex.mjs';
 import { activate, licensed } from '../lib/license.mjs';
 
 const argv = process.argv.slice(2);
@@ -22,22 +25,30 @@ if (argv[0] === 'activate') {
   process.exit(0);
 }
 
+if (argv[0] === 'statusline') {
+  const { statusline } = await import('../lib/statusline.mjs');
+  await statusline();
+  process.exit(0);
+}
+
 const daysFlag = argv.indexOf('--days');
 const DAYS = daysFlag >= 0 ? Number(argv[daysFlag + 1]) : 7;
 
 await scan();
+await scanCodex();
 
 const now = Date.now();
 const iso = (t) => new Date(t).toISOString();
 const HOUR = 3600_000;
 
-// hourly cost buckets across all history (for window math)
+// hourly cost buckets across all history (for window math) — Claude only;
+// the plan-window math is about the Claude quota, codex gets its own section
 const hourly = new Map(); // '2026-08-02T19' -> $
 for (const r of db.prepare(`
   SELECT substr(ts, 1, 13) AS hour, model,
          SUM(input) input, SUM(output) output, SUM(cache_read) cache_read,
          SUM(cache_5m) cache_5m, SUM(cache_1h) cache_1h
-  FROM events GROUP BY hour, model`).all()) {
+  FROM events WHERE source = 'claude' GROUP BY hour, model`).all()) {
   hourly.set(r.hour, (hourly.get(r.hour) ?? 0) + cost(r));
 }
 
@@ -62,19 +73,19 @@ const agg = (sql, ...params) => db.prepare(sql).all(...params)
 const byModel = agg(`
   SELECT model, COUNT(*) msgs, SUM(input) input, SUM(output) output,
          SUM(cache_read) cache_read, SUM(cache_5m) cache_5m, SUM(cache_1h) cache_1h
-  FROM events WHERE ts >= ? GROUP BY model ORDER BY SUM(output) DESC`, since);
+  FROM events WHERE source = 'claude' AND ts >= ? GROUP BY model ORDER BY SUM(output) DESC`, since);
 
 const byProject = agg(`
   SELECT COALESCE(project,'?') project, model, SUM(input) input, SUM(output) output,
          SUM(cache_read) cache_read, SUM(cache_5m) cache_5m, SUM(cache_1h) cache_1h
-  FROM events WHERE ts >= ? GROUP BY project, model`, since);
+  FROM events WHERE source = 'claude' AND ts >= ? GROUP BY project, model`, since);
 const projTotals = new Map();
 for (const r of byProject) projTotals.set(r.project, (projTotals.get(r.project) ?? 0) + r.cost);
 
 const byDay = agg(`
   SELECT substr(ts, 1, 10) day, model, SUM(input) input, SUM(output) output,
          SUM(cache_read) cache_read, SUM(cache_5m) cache_5m, SUM(cache_1h) cache_1h
-  FROM events WHERE ts >= ? GROUP BY day, model`, iso(now - 14 * 24 * HOUR));
+  FROM events WHERE source = 'claude' AND ts >= ? GROUP BY day, model`, iso(now - 14 * 24 * HOUR));
 const dayTotals = new Map();
 for (const r of byDay) dayTotals.set(r.day, (dayTotals.get(r.day) ?? 0) + r.cost);
 
@@ -121,8 +132,37 @@ const projMax = Math.max(...projTotals.values(), 0.01);
 for (const [p, v] of [...projTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)) {
   console.log(`  ${p.slice(0, 20).padEnd(20)} ${bar(v, projMax, 28)} ${$(v).padStart(8)}`);
 }
+
+// codex rollouts, if any — separate section because it's a separate plan's
+// quota; models without a known list rate show tokens, never invented dollars
+const codexModels = agg(`
+  SELECT model, COUNT(*) msgs, SUM(input) input, SUM(output) output,
+         SUM(cache_read) cache_read, SUM(cache_5m) cache_5m, SUM(cache_1h) cache_1h
+  FROM events WHERE source = 'codex' AND ts >= ? GROUP BY model ORDER BY SUM(output) DESC`, since);
+if (codexModels.length) {
+  console.log('');
+  console.log(bold(`codex, last ${DAYS}d`) + dim('  (ChatGPT plan, from ~/.codex rollouts)'));
+  for (const r of codexModels) {
+    const detail = dim(`out ${tok(r.output).padStart(7)}  cache-r ${tok(r.cache_read).padStart(7)}  msgs ${r.msgs}`);
+    if (r.cost === null) {
+      console.log(`  ${r.model.padEnd(22)} ${dim('no rate'.padStart(8))}  ${dim(`in ${tok(r.input + r.cache_read)}  out ${tok(r.output)} — add it in lib/pricing.mjs`)}`);
+    } else {
+      console.log(`  ${r.model.padEnd(22)} ${$(r.cost).padStart(8)}  ${detail}`);
+    }
+  }
+  const codexProj = agg(`
+    SELECT COALESCE(project,'?') project, model, SUM(input) input, SUM(output) output,
+           SUM(cache_read) cache_read, SUM(cache_5m) cache_5m, SUM(cache_1h) cache_1h
+    FROM events WHERE source = 'codex' AND ts >= ? GROUP BY project, model`, since);
+  const cpTotals = new Map();
+  for (const r of codexProj) cpTotals.set(r.project, (cpTotals.get(r.project) ?? 0) + (r.cost ?? 0));
+  const cpTop = [...cpTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+    .filter(([, v]) => v >= 0.005).map(([p, v]) => `${p} ${$(v)}`);
+  if (cpTop.length) console.log(dim(`  top projects: ${cpTop.join(', ')}`));
+}
 console.log(line);
 
 const total = db.prepare('SELECT COUNT(*) n, MIN(ts) lo FROM events').get();
+const dataDirs = codexModels.length ? '~/.claude/projects + ~/.codex' : '~/.claude/projects';
 const lic = licensed() ? '' : '  ·  unlicensed — $3 once at gauge.joey.win';
-console.log(dim(`${total.n} API messages since ${String(total.lo).slice(0, 10)} — data: ~/.claude/projects${lic}`));
+console.log(dim(`${total.n} API messages since ${String(total.lo).slice(0, 10)} — data: ${dataDirs}${lic}`));
