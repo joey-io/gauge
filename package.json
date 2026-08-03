@@ -1,7 +1,7 @@
 {
-  "name": "gauge-cli",
+  "name": "@joey-io/gauge",
   "version": "0.3.0",
-  "description": "A local meter for your Claude Code and Codex plans. See what is eating your allowance — by hour, day, model, and project. Nothing leaves your machine.",
+  "description": "A local meter for your Claude Code and Codex plans. See what is eating your allowance \u2014 by hour, day, model, and project. Nothing leaves your machine.",
   "bin": {
     "gauge": "./bin/burn.mjs"
   },
@@ -17,5 +17,8 @@
     "lib",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
