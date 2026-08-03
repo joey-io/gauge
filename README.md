@@ -38,6 +38,25 @@ Install gauge on your PATH (`npm i -g github:joey-io/gauge`), then in
 
 It rescans at most once a minute, so statusline refreshes stay fast.
 
+## Send it to Page
+
+`gauge page` sends the per-project breakdown to [Page](https://a-gnt.com/page),
+so the reading reaches your phone instead of waiting for you to be at a
+terminal:
+
+```sh
+gauge page              # last 7 days, one page per project ranked by spend
+gauge page --days 1     # today
+gauge page --dry-run    # print what it would send, send nothing
+```
+
+It reads the token `page login` already wrote to `~/.config/pager/config.json`
+(or `PAGER_TOKEN`), and posts straight to the API — no extra dependency, and
+the `page` CLI does not have to be installed.
+
+Gauge measures backward, Page reaches forward. Pairing them is how a project
+that quietly ate $300 last week gets to tell you so.
+
 ## How it counts
 
 - Dollars are **API-list-equivalent** — what this usage would cost at the

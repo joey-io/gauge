@@ -31,6 +31,26 @@ if (argv[0] === 'statusline') {
   process.exit(0);
 }
 
+// gauge page — send the per-project reading to Page, so the breakdown reaches
+// your phone instead of waiting for you to be at a terminal.
+if (argv[0] === 'page') {
+  const { pageReport } = await import('../lib/page.mjs');
+  const d = argv.indexOf('--days');
+  try {
+    const r = await pageReport({
+      days: d >= 0 ? Number(argv[d + 1]) : 7,
+      dryRun: argv.includes('--dry-run'),
+    });
+    if (r.skipped) console.error(r.reason);
+    else if (r.dryRun) console.log(`${r.title}\n\n${r.body}`);
+    else console.log(`paged ${r.id} — ${r.title}`);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 const daysFlag = argv.indexOf('--days');
 const DAYS = daysFlag >= 0 ? Number(argv[daysFlag + 1]) : 7;
 
