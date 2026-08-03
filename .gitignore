@@ -1,3 +1,8 @@
 data/
 secrets/
-scripts/
+# scripts/ holds operator scripts that touch live Stripe + signing keys
+# (launch.sh, pulse.sh). Ignore the contents, not the directory, so a
+# secret-free script can be re-included by name — git cannot un-ignore a
+# file whose parent directory is itself ignored.
+scripts/*
+!scripts/weekly-page.sh
