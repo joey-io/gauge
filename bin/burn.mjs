@@ -4,7 +4,7 @@
 // what's eating my allowance, and how fast. Costs are API-list-equivalent
 // dollars — plans don't expose quota mechanics, so this is the honest common
 // currency, not a bill.
-// Usage: gauge [--days N]  (default window for the breakdown sections: 7)
+// Usage: gauge [--days N] [--card]  (default window: 7; --card = compact view)
 //        gauge statusline   (one line for Claude Code's statusLine slot)
 //        gauge activate <key>
 import { db } from '../lib/db.mjs';
@@ -117,6 +117,45 @@ const tok = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).
 const bar = (v, maxV, w = W) => '█'.repeat(Math.min(w, Math.round((v / (maxV || 1)) * w))).padEnd(w);
 const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s) => `\x1b[1m${s}\x1b[0m`;
+
+// --card: the compact view from the site's hero mockup (a-gnt.com/gauge),
+// same layout and palette (amber-200 text, white figures, zinc-500 footer).
+// The 5h bar is against the observed peak; project bars against the top project.
+if (argv.includes('--card')) {
+  const AMBER = '\x1b[38;2;253;230;138m', WHITE = '\x1b[97m', GRAY = '\x1b[38;2;113;113;122m', RESET = '\x1b[0m';
+  const out = (s = '') => console.log(AMBER + s + RESET);
+  const val = (s) => WHITE + s + AMBER;
+  const meter = (v, maxV, w) => {
+    const f = Math.min(w, Math.round((v / (maxV || 1)) * w));
+    return `▕${'█'.repeat(f)}${'░'.repeat(w - f)}▏`;
+  };
+  const whole = (v) => v >= 10 ? `$${v.toFixed(0)}` : $(v);
+  const projects = [...projTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const families = new Map(); // claude-opus-5-5 + claude-opus-5 -> opus
+  for (const r of byModel) {
+    const fam = r.model.replace(/^claude-/, '').split('-')[0];
+    families.set(fam, (families.get(fam) ?? 0) + (r.cost ?? 0));
+  }
+  const models = [...families.entries()].sort((a, b) => b[1] - a[1]);
+  const rows = [...projects, ...models];
+  const nameW = Math.max(13, ...rows.map(([n]) => Math.min(20, n.length))) + 2;
+  const valW = Math.max(4, ...rows.map(([, v]) => whole(v).length));
+  const row = (n, v) => `  ${n.slice(0, 20).padEnd(nameW)}${val(whole(v).padStart(valW))}`;
+  const windowTotal = [...projTotals.values()].reduce((s, v) => s + v, 0);
+  const pct = max5h ? Math.round((cur5h / max5h) * 100) : 0;
+  out();
+  out(`${'last 5h'.padEnd(10)}${val($(cur5h).padEnd(8))}${meter(cur5h, max5h, 16)} ${pct}% of peak`);
+  out(`${`last ${DAYS}d`.padEnd(10)}${val($(windowTotal).padEnd(8))}peak 5h window ${$(max5h)}`);
+  out();
+  out(`by project, ${DAYS}d`);
+  for (const [p, v] of projects) out(`${row(p, v)}  ${meter(v, projects[0][1], 12)}`);
+  out();
+  out(`by model, ${DAYS}d`);
+  for (const [m, v] of models) out(row(m, v));
+  const lic = licensed() ? '' : '\nunlicensed — $3 once at gauge.joey.win';
+  console.log(`${GRAY}API-equivalent dollars — a measure,\nnot your bill. Data stays local.${lic}${RESET}`);
+  process.exit(0);
+}
 
 const today = iso(now).slice(0, 10);
 const line = '─'.repeat(78);

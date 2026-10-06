@@ -84,6 +84,7 @@ A Claude Code history at `~/.claude/projects`, a Codex history at
 
 ```
 gauge --days 30       # widen the by-model / by-project sections
+gauge --card          # compact view, the one on the site (combines with --days)
 gauge statusline      # one line for Claude Code's statusLine slot
 gauge activate <key>  # register a license key (verifies offline)
 GAUGE_DATA_DIR=...    # move the cache db (default ~/.cache/gauge)
